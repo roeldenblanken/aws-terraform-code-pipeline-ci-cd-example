@@ -4,7 +4,7 @@ locals {
 }
 
 resource "aws_s3_bucket" "codepipeline_bucket" {
-  bucket = "${var.name_prefix}-${var.env}-code-pipeline-bucket"
+  bucket = "${var.name_prefix}-${var.name_suffix}-${var.env}-code-pipeline-bucket"
   acl    = "private"
   
   /* This bucket MUST have versioning enabled and encryption */
@@ -48,7 +48,7 @@ EOF
 
 resource "aws_iam_role_policy_attachment" "codepipeline_attach" {
   role = aws_iam_role.codepipeline_role.name
-  policy_arn = "arn:aws:iam::aws:policy/PowerUserAccess"
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
 
 resource "aws_codebuild_project" "codebuild_project" {
@@ -68,7 +68,8 @@ resource "aws_codebuild_project" "codebuild_project" {
     image                       = "aws/codebuild/amazonlinux2-x86_64-standard:2.0"
     type                        = "LINUX_CONTAINER"
     image_pull_credentials_type = "CODEBUILD"
-	privileged_mode 			= "false"
+	# Needed when building docker images
+	privileged_mode 			= "true"
 
     environment_variable {
       name  = "TF_VERSION"
@@ -132,7 +133,7 @@ resource "aws_codepipeline" "codepipeline" {
 
       configuration = {
         OAuthToken           = var.github_oauth_token
-        Owner                = "roeldenblanken"
+        Owner                = var.owner
         Repo                 = var.repo_name
         Branch               = var.repo_default_branch
       }

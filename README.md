@@ -1,3 +1,13 @@
-# Deployment Instructions
+# Architecture
+The AWS solution is depicted in the diagram below.
+![Image description](ci-cd.png)
 
-Install Terraform. Clone this project. Open console in [dev](terraform/envs/dev) folder. Configure the terraform backend (S3 Bucket and DynamoDB table as instructed in the dev.tf file). Then usual terraform init, get, plan and apply commands.
+With this project you can create 2 code pipelines:
+1) One of the pipelines can be used to create the necessary infrastructure (VPC, CodeBuild, ECS, Fargate) and do the new application deployments.
+2) The other pipeline can be used to build the application docker image.
+
+When the second pipeline has finished with building the application docker image, it should then trigger the first pipeline in order to deploy the new created docker image.
+To trigger a new deployment of an ECS task definition a BUILD_ID is introduced in the task definition task and as an environment variable. This is a workaround because the origional ECS task definition uses the tag "latest" in the image name.
+
+# Deployment Instructions
+Use the shell scripts provided in the root of the project
