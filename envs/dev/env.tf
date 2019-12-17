@@ -19,21 +19,7 @@ locals {
   my_region                 = "eu-west-1"
   # Use unique environment names, e.g. dev, custqa, qa, test, perf, ci, prod...
   my_env                    = "dev"
-  # Use consistent prefix, e.g. <cloud-provider>-<demo-target/purpose>-demo, e.g. aws-ecs-demo
-  my_prefix                 = "code-pipeline-demo"
-  my_suffix					= "my_suffix"
   all_demos_terraform_info  = "blankia-demo"
-  # NOTE: Reserve 10.20.*.* address space for this demonstration.
-  vpc_cidr_block            = "10.20.0.0/16"
-  private_subnet_count      = "2"
-  ecs_service_desired_count = 2
-  ecr_crm_image_version     = "0.1"
-  # See: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
-  fargate_container_memory  = "4096"
-  fargate_container_cpu     = "1024"
-  app_port                  = "80"
-  repo_name					= "ecs-fargate-example"
-  repo_default_branch       = "master"
   TF_VERSION                = "0.12.18"
 }
 
@@ -46,8 +32,8 @@ terraform {
     bucket     = "terraform-blankia"
     # NOTE: This must be unique for each demo!!!
     # Use the same prefix and dev as in local!
-    # I.e. key = "<prefix>/<dev>/terraform.tfstate".
-    key        = "aws-code-pipeline-demo/dev/terraform.tfstate"
+	# I.e. k.ey = "<prefix>/<dev>/<source>/terraform.tfstate".
+key        = "aws-code-pipeline-demo/dev/k8s-app/terraform.tfstate"
     region     = "eu-west-1"
     # NOTE: We use the same DynamoDB table for locking all state files of all demos. Do not change name.
     dynamodb_table = "blankia-demos-terraform-backends"
@@ -60,14 +46,30 @@ provider "aws" {
   region     = local.my_region
 }
 
+# NOTE: Provide the source repository location Github -> <owner>/<repo_name>/<repo_default_branch>
+variable "owner" {}
+variable "repo_name" {}
+variable "repo_default_branch" {}
+
+# Do you want to deploy a "infra", "ecs-app", "k8s-app" CI/CD pipeline
+variable "type" {}
+
+# Use consistent prefix, e.g. <cloud-provider>-<demo-target/purpose>-demo, e.g. aws-ecs-demo
+variable "my_prefix" {}
+
+# NOTE: Provide the suffix
+variable "my_suffix" {}
+
 # Here we inject our values to the environment definition module which creates all actual resources.
 module "env-def" {
   source                    = "../../modules/env-def"
-  prefix                    = "${local.my_prefix}"
-  suffix                    = "${local.my_suffix}"
+  type						= "${var.type}"
+  prefix                    = "${var.my_prefix}"
+  suffix                    = "${var.my_suffix}"
   env                       = "${local.my_env}"
   region                    = "${local.my_region}"
-  repo_name					= "${local.repo_name}"
-  repo_default_branch       = "${local.repo_default_branch}"
+  owner						= "${var.owner}"  
+  repo_name					= "${var.repo_name}"
+  repo_default_branch       = "${var.repo_default_branch}"
   TF_VERSION                = "${local.TF_VERSION}"
 }

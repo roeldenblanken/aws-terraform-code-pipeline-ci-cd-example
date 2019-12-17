@@ -1,3 +1,6 @@
+variable "type" {
+  type = string
+}
 variable "name_prefix" {
   type = string
 }
@@ -14,6 +17,10 @@ variable "region" {
   type = string
 }
 
+variable "owner" {
+  type = string
+}
+
 variable "repo_name" {
   type = string
 }
@@ -27,5 +34,9 @@ variable "github_oauth_token" {
 }
 
 variable "TF_VERSION" {
+  type = string
+}
+
+variable "bucket" {
   type = string
 }

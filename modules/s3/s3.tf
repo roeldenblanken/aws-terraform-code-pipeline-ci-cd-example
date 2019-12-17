@@ -1,7 +1,7 @@
 /* Create Bucket for Terraform code pipeline Modules */
 
 resource "aws_s3_bucket" "codepipeline_bucket" {
-  bucket = "${var.name_prefix}-${var.env}-bucket"
+  bucket = "${var.name_prefix}-${var.type}-${var.name_suffix}-${var.env}-bucket"
   acl    = "private"
 
   /* This bucket MUST have versioning enabled and encryption */

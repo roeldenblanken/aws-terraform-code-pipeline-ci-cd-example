@@ -1,0 +1,34 @@
+# terraform specific files
+**/.terraform
+**.tfstate
+
+*target*
+*.jar
+*.war
+*.ear
+*.class
+*.log.*
+*.log
+*.lck
+*.lock
+
+# idea specific git ignore
+.idea/
+*.iml
+
+# eclipse specific git ignore
+.project
+.metadata
+bin/**
+tmp/**
+tmp/**/*
+*.log
+*.tmp
+*.bak
+*.swp
+.classpath
+.settings/
+.loadpath
+
+# Locally stored "Eclipse launch configurations"
+*.launch

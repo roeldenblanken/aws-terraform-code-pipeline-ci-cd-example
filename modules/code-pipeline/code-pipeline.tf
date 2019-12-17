@@ -1,30 +1,10 @@
 locals {
-  my_name  = "${var.name_prefix}-${var.env}"
-  my_deployment   = "${var.name_prefix}-${var.env}"
-}
-
-resource "aws_s3_bucket" "codepipeline_bucket" {
-  bucket = "${var.name_prefix}-${var.env}-code-pipeline-bucket"
-  acl    = "private"
-  
-  /* This bucket MUST have versioning enabled and encryption */
-  versioning {
-    enabled = true
-  }
-
-  force_destroy = true
-
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm = "aws:kms"
-      }
-    }
-  }
+  my_name  = "${var.name_prefix}-${var.type}-${var.env}"
+  my_deployment   = "${var.name_prefix}-${var.type}-${var.env}"
 }
 
 resource "aws_iam_role" "codepipeline_role" {
-  name = "${var.name_prefix}-${var.name_suffix}-${var.env}-role"
+  name = "${var.name_prefix}-${var.type}-${var.name_suffix}-${var.env}-role"
 
   assume_role_policy = <<EOF
 {
@@ -48,11 +28,11 @@ EOF
 
 resource "aws_iam_role_policy_attachment" "codepipeline_attach" {
   role = aws_iam_role.codepipeline_role.name
-  policy_arn = "arn:aws:iam::aws:policy/PowerUserAccess"
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
 
 resource "aws_codebuild_project" "codebuild_project" {
-  name          = "${var.name_prefix}-${var.name_suffix}-${var.env}-apply-project"
+  name          = "${var.name_prefix}-${var.type}-${var.name_suffix}-${var.env}-apply-project"
   description   = "${var.env}_codebuild_project"
   build_timeout = "5"
   service_role  = aws_iam_role.codepipeline_role.arn
@@ -68,7 +48,8 @@ resource "aws_codebuild_project" "codebuild_project" {
     image                       = "aws/codebuild/amazonlinux2-x86_64-standard:2.0"
     type                        = "LINUX_CONTAINER"
     image_pull_credentials_type = "CODEBUILD"
-	privileged_mode 			= "false"
+	# Needed when building docker images
+	privileged_mode 			= "true"
 
     environment_variable {
       name  = "TF_VERSION"
@@ -110,12 +91,16 @@ resource "aws_codebuild_project" "codebuild_project" {
   }
 }
 
-resource "aws_codepipeline" "codepipeline" {
-  name     = "${var.name_prefix}-${var.name_suffix}-${var.env}-pipeline"
+#######################################
+# the codepipeline for the "infra"#
+#######################################
+resource "aws_codepipeline" "codepipeline_infra" {
+  count = var.type == "infra" ? 1 : 0
+  name     = "${var.name_prefix}-${var.type}-${var.name_suffix}-${var.env}-pipeline"
   role_arn = aws_iam_role.codepipeline_role.arn
 
   artifact_store {
-    location = aws_s3_bucket.codepipeline_bucket.bucket
+    location = var.bucket
     type     = "S3"
   }
   
@@ -132,7 +117,7 @@ resource "aws_codepipeline" "codepipeline" {
 
       configuration = {
         OAuthToken           = var.github_oauth_token
-        Owner                = "roeldenblanken"
+        Owner                = var.owner
         Repo                 = var.repo_name
         Branch               = var.repo_default_branch
       }
@@ -163,7 +148,7 @@ resource "aws_codepipeline" "codepipeline" {
     name = "DEV"
 
     action {
-      name     = "${var.name_prefix}-${var.name_suffix}-terraform-plan"
+      name     = "${var.name_prefix}-${var.type}-${var.name_suffix}-terraform-plan"
       category         = "Build"
       owner            = "AWS"
       provider         = "CodeBuild"
@@ -184,7 +169,7 @@ resource "aws_codepipeline" "codepipeline" {
     }
 	
     action {
-      name     = "${var.name_prefix}-${var.name_suffix}-Approval"
+      name     = "${var.name_prefix}-${var.type}-${var.name_suffix}-Approval"
       category = "Approval"
       owner    = "AWS"
       provider = "Manual"
@@ -199,7 +184,7 @@ resource "aws_codepipeline" "codepipeline" {
     name = "TEST"
 
     action {
-      name     = "${var.name_prefix}-${var.name_suffix}-terraform-plan"
+      name     = "${var.name_prefix}-${var.type}-${var.name_suffix}-terraform-plan"
       category         = "Build"
       owner            = "AWS"
       provider         = "CodeBuild"
@@ -220,7 +205,7 @@ resource "aws_codepipeline" "codepipeline" {
     }
 	
     action {
-      name     = "${var.name_prefix}-${var.name_suffix}-Approval"
+      name     = "${var.name_prefix}-${var.type}-${var.name_suffix}-Approval"
       category = "Approval"
       owner    = "AWS"
       provider = "Manual"
@@ -235,7 +220,208 @@ resource "aws_codepipeline" "codepipeline" {
     name = "Post-steps"
 
     action {
-      name     = "${var.name_prefix}-${var.name_suffix}-post-steps"
+      name     = "${var.name_prefix}-${var.type}-${var.name_suffix}-post-steps"
+      category = "Approval"
+      owner    = "AWS"
+      provider = "Manual"
+      version  = "1"
+
+      configuration = {
+      }
+    }
+  }
+}
+
+
+#######################################
+# the codepipeline for the "ecs-app"#
+#######################################
+resource "aws_codepipeline" "codepipeline_ecs_app" {
+  count 	= var.type == "ecs-app" ? 1 : 0
+  name     	= "${var.name_prefix}-${var.type}-${var.name_suffix}-${var.env}-pipeline"
+  role_arn 	= aws_iam_role.codepipeline_role.arn
+
+  artifact_store {
+    location = var.bucket
+    type     = "S3"
+  }
+
+  stage {
+    name = "Source"
+
+    action {
+      name             = "Source"
+      category         = "Source"
+      owner            = "ThirdParty"
+      provider         = "GitHub"
+      version          = "1"
+      output_artifacts = ["source"]
+
+      configuration = {
+        OAuthToken           = var.github_oauth_token
+        Owner                = var.owner
+        Repo                 = var.repo_name
+        Branch               = var.repo_default_branch
+      }
+    }
+  }
+  
+  stage {
+	name = "BuildDockerImage"
+
+	action {
+	  name     = "${var.name_prefix}-${var.type}-${var.name_suffix}-terraform-plan"
+	  category         = "Build"
+	  owner            = "AWS"
+	  provider         = "CodeBuild"
+	  input_artifacts  = ["source"]
+	  version          = "1"
+
+	  configuration = {
+		ProjectName = aws_codebuild_project.codebuild_project.name
+		
+		EnvironmentVariables = jsonencode([
+		{
+			name  = "ENVIRONMENT"
+			value = "dev"
+			type  = "PLAINTEXT"
+		  }
+		])
+	  }
+	}
+
+	action {
+      name     = "${var.name_prefix}-${var.type}-${var.name_suffix}-post-steps"
+      category = "Approval"
+      owner    = "AWS"
+      provider = "Manual"
+      version  = "1"
+
+	  configuration = {
+	  }
+	}
+  }
+  
+  stage {
+    name = "DeployToECS"
+
+    action {
+      name            = "DeployToECS"
+      category        = "Deploy"
+      owner           = "AWS"
+      provider        = "ECS"
+      input_artifacts = ["source"]
+      version         = "1"
+
+      configuration = {
+        ClusterName   = "TOBECHANGEDMANUALLY"
+        ServiceName   = "TOBECHANGEDMANUALLY"
+      }
+    }
+
+    action {
+      name     = "${var.name_prefix}-${var.type}-${var.name_suffix}-post-steps"
+      category = "Approval"
+      owner    = "AWS"
+      provider = "Manual"
+      version  = "1"
+
+      configuration = {
+      }
+    }
+  }
+}
+
+
+
+#######################################
+# the codepipeline for the "k8s-app"#
+#######################################
+resource "aws_codepipeline" "codepipeline_kubernetes_app" {
+  count = var.type == "k8s-app" ? 1 : 0
+  name     = "${var.name_prefix}-${var.type}-${var.name_suffix}-${var.env}-pipeline"
+  role_arn = aws_iam_role.codepipeline_role.arn
+
+  artifact_store {
+    location = var.bucket
+    type     = "S3"
+  }
+
+  stage {
+    name = "Source"
+
+    action {
+      name             = "Source"
+      category         = "Source"
+      owner            = "ThirdParty"
+      provider         = "GitHub"
+      version          = "1"
+      output_artifacts = ["source"]
+
+      configuration = {
+        OAuthToken           = var.github_oauth_token
+        Owner                = var.owner
+        Repo                 = var.repo_name
+        Branch               = var.repo_default_branch
+      }
+    }
+  }
+  
+  stage {
+	name = "BuildDockerImage"
+
+	action {
+	  name     = "${var.name_prefix}-${var.type}-${var.name_suffix}-terraform-plan"
+	  category         = "Build"
+	  owner            = "AWS"
+	  provider         = "CodeBuild"
+	  input_artifacts  = ["source"]
+	  version          = "1"
+
+	  configuration = {
+		ProjectName = aws_codebuild_project.codebuild_project.name
+		
+		EnvironmentVariables = jsonencode([
+		{
+			name  = "ENVIRONMENT"
+			value = "dev"
+			type  = "PLAINTEXT"
+		  }
+		])
+	  }
+	}
+
+	action {
+      name     = "${var.name_prefix}-${var.type}-${var.name_suffix}-post-steps"
+      category = "Approval"
+      owner    = "AWS"
+      provider = "Manual"
+      version  = "1"
+
+	  configuration = {
+	  }
+	}
+  }
+  
+  stage {
+    name = "TriggerTheKubernetesDeployment"
+
+    action {
+      name            = "TriggerTheKubernetesDeployment"
+      category        = "Invoke"
+      owner           = "AWS"
+      provider        = "Lambda"
+      input_artifacts = ["source"]
+      version         = "1"
+
+      configuration = {
+        FunctionName   = "notify_k8s_deploy"
+        UserParameters = "x"
+      }
+    }
+
+    action {
+      name     = "${var.name_prefix}-${var.type}-${var.name_suffix}-post-steps"
       category = "Approval"
       owner    = "AWS"
       provider = "Manual"

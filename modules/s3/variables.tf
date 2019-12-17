@@ -1,3 +1,6 @@
+variable "type" {
+  type = string
+}
 variable "name_prefix" {
   type = string
 }

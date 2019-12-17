@@ -1,5 +1,6 @@
 locals {
-  my_deployment   = "${var.prefix}-${var.env}"
+  my_deployment   = "${var.prefix}-${var.type}-${var.env}"
+  name   = "${var.prefix}-${var.type}-${var.suffix}"
 }
 
 # Create the following resource groups for finding resources.
@@ -7,7 +8,7 @@ locals {
 
 module "rg_environment" {
   source        = "./resource-group"
-  prefix        = "${var.prefix}"
+  prefix        = "${local.name}"
   env           = "${var.env}"
   tag_key       = "Environment"
   tag_value     = "${var.env}"
@@ -15,7 +16,7 @@ module "rg_environment" {
 
 module "rg_deployment" {
   source        = "./resource-group"
-  prefix        = "${var.prefix}"
+  prefix        = "${local.name}"
   env           = "${var.env}"
   tag_key       = "Deployment"
   tag_value     = "${local.my_deployment}"
@@ -23,7 +24,7 @@ module "rg_deployment" {
 
 module "rg_prefix" {
   source        = "./resource-group"
-  prefix        = "${var.prefix}"
+  prefix        = "${local.name}"
   env           = "${var.env}"
   tag_key       = "Prefix"
   tag_value     = "${var.prefix}"
@@ -32,7 +33,7 @@ module "rg_prefix" {
 
 module "rg_terraform" {
   source        = "./resource-group"
-  prefix        = "${var.prefix}"
+  prefix        = "${local.name}"
   env           = "${var.env}"
   tag_key       = "Terraform"
   tag_value     = "true"
@@ -40,7 +41,7 @@ module "rg_terraform" {
 
 module "rg_region" {
   source        = "./resource-group"
-  prefix        = "${var.prefix}"
+  prefix        = "${local.name}"
   env           = "${var.env}"
   tag_key       = "Region"
   tag_value     = "${var.region}"
