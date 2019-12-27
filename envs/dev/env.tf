@@ -33,7 +33,7 @@ terraform {
     # NOTE: This must be unique for each demo!!!
     # Use the same prefix and dev as in local!
 	# I.e. k.ey = "<prefix>/<dev>/<source>/terraform.tfstate".
-key        = "aws-code-pipeline-demo/dev/app/terraform.tfstate"
+	key        = "aws-code-pipeline-demo/dev/terraform.tfstate"
     region     = "eu-west-1"
     # NOTE: We use the same DynamoDB table for locking all state files of all demos. Do not change name.
     dynamodb_table = "blankia-demos-terraform-backends"
@@ -47,15 +47,17 @@ provider "aws" {
 }
 
 # NOTE: Provide the source repository location Github -> <owner>/<repo_name>/<repo_default_branch>
-variable "owner" {}
-variable "repo_name" {}
-variable "repo_default_branch" {}
+variable "owner_app" {}
+variable "repo_name_app" {}
+variable "repo_default_branch_app" {}
+variable "owner_infra" {}
+variable "repo_name_infra" {}
+variable "repo_default_branch_infra" {}
 
 # Use consistent prefix, e.g. <cloud-provider>-<demo-target/purpose>-demo, e.g. aws-ecs-demo
 variable "my_prefix" {}
 
-# NOTE: Provide the suffix for example "infra" or "app"
-# When using the terraform infrastructure as source then my_suffix -> "infra". When using the application code as source then my_suffix -> "app"
+#  Use consistent suffix
 variable "my_suffix" {}
 
 # Here we inject our values to the environment definition module which creates all actual resources.
@@ -65,8 +67,11 @@ module "env-def" {
   suffix                    = "${var.my_suffix}"
   env                       = "${local.my_env}"
   region                    = "${local.my_region}"
-  owner						= "${var.owner}"  
-  repo_name					= "${var.repo_name}"
-  repo_default_branch       = "${var.repo_default_branch}"
+  owner_infra  				= "${var.owner_infra}"  
+  repo_name_infra			= "${var.repo_name_infra}"
+  repo_default_branch_infra = "${var.repo_default_branch_infra}"
+  owner_app  				= "${var.owner_app}"  
+  repo_name_app				= "${var.repo_name_app}"
+  repo_default_branch_app   = "${var.repo_default_branch_app}"
   TF_VERSION                = "${local.TF_VERSION}"
 }

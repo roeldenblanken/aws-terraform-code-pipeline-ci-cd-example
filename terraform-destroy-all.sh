@@ -24,17 +24,6 @@ fi
 
 cd "envs/${env}"
 
-echo "Will destroy the 'infra' and 'app' source pipelines in environment ${env}"
-
-declare -a arr=("infra" "app")
-
-for i in "${arr[@]}"
-do
-   echo "Destroying $i in environment ${env} with source=$i"
-   # replace the Terraform bucket state source prefix so that the infra and app state are not shared
-   sed -i "s/.*key.*=.*/key        = \"aws-code-pipeline-demo\/dev\/$i\/terraform.tfstate\"/g" env.tf
-   # as configured in the env/dev/env.tf file
-	terraform init -reconfigure
-	echo terraform destroy -var my_suffix="${i}" -var owner="notimportantfordestroy" -var repo_name="notimportantfordestroy" -var repo_default_branch="notimportantfordestroy"
-	terraform destroy -var my_suffix="${i}" -var owner="notimportantfordestroy" -var repo_name="notimportantfordestroy" -var repo_default_branch="notimportantfordestroy"
-done
+# as configured in the env/dev/env.tf file
+terraform init
+terraform destroy -var my_suffix="${i}" -var my_prefix="notimportantfordestroy" -var owner_infra="notimportantfordestroy" -var repo_name_infra="notimportantfordestroy" -var repo_default_branch_infra="notimportantfordestroy" -var owner_app="notimportantfordestroy" -var repo_name_app="notimportantfordestroy" -var repo_default_branch_app="notimportantfordestroy"

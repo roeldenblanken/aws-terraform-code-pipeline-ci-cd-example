@@ -46,15 +46,30 @@ module "prereqs" {
   env           = var.env
 }
 
-module "code-pipeline" {
+module "code-pipeline-infra" {
   source          = "../code-pipeline"
+  name			  = "infra" 
   region          = var.region
   name_prefix     = var.prefix
   name_suffix     = var.suffix
   env             = var.env
-  owner			  = var.owner
-  repo_name	      = var.repo_name
-  repo_default_branch = var.repo_default_branch 
+  owner			  = var.owner_infra
+  repo_name	      = var.repo_name_infra
+  repo_default_branch = var.repo_default_branch_infra
+  github_oauth_token  = data.aws_ssm_parameter.github_oauth_token.value
+  TF_VERSION      = var.TF_VERSION
+}
+
+module "code-pipeline-app" {
+  source          = "../code-pipeline"
+  name			  = "app" 
+  region          = var.region
+  name_prefix     = var.prefix
+  name_suffix     = var.suffix
+  env             = var.env
+  owner			  = var.owner_app
+  repo_name	      = var.repo_name_app
+  repo_default_branch = var.repo_default_branch_app 
   github_oauth_token  = data.aws_ssm_parameter.github_oauth_token.value
   TF_VERSION      = var.TF_VERSION
 }
