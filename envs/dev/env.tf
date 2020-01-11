@@ -33,7 +33,7 @@ terraform {
     # NOTE: This must be unique for each demo!!!
     # Use the same prefix and dev as in local!
 	# I.e. k.ey = "<prefix>/<dev>/<source>/terraform.tfstate".
-key        = "aws-code-pipeline-demo/dev/k8s-app/terraform.tfstate"
+    key        = "aws-code-pipeline-demo/dev/k8s-app/terraform.tfstate"
     region     = "eu-west-1"
     # NOTE: We use the same DynamoDB table for locking all state files of all demos. Do not change name.
     dynamodb_table = "blankia-demos-terraform-backends"
@@ -63,13 +63,13 @@ variable "my_suffix" {}
 # Here we inject our values to the environment definition module which creates all actual resources.
 module "env-def" {
   source                    = "../../modules/env-def"
-  type						= "${var.type}"
+  type                      = "${var.type}"
   prefix                    = "${var.my_prefix}"
   suffix                    = "${var.my_suffix}"
   env                       = "${local.my_env}"
   region                    = "${local.my_region}"
-  owner						= "${var.owner}"  
-  repo_name					= "${var.repo_name}"
+  owner                     = "${var.owner}"
+  repo_name                 = "${var.repo_name}"
   repo_default_branch       = "${var.repo_default_branch}"
   TF_VERSION                = "${local.TF_VERSION}"
 }

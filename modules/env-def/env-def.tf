@@ -32,7 +32,7 @@ data "aws_caller_identity" "current" {}
 # You can use Resource groups to find resources. See AWS Console => Resource Groups => Saved.
 module "resource-groups" {
   source           = "../resource-groups"
-  type			   = var.type
+  type             = var.type
   prefix           = var.prefix
   suffix     	   = var.suffix
   env              = var.env
@@ -42,25 +42,25 @@ module "resource-groups" {
 module "s3" {
   source        = "../s3"
   region        = var.region
-  type			= var.type
+  type          = var.type
   name_prefix   = var.prefix
   name_suffix   = var.suffix
   env           = var.env
 }
 
 module "code-pipeline" {
-  source          		= "../code-pipeline"
-  region          		= var.region
-  type			  		= var.type
-  name_prefix     		= var.prefix
-  name_suffix     		= var.suffix
-  env             		= var.env
-  owner			  		= var.owner
-  repo_name	      		= var.repo_name
-  repo_default_branch 	= var.repo_default_branch 
-  github_oauth_token  	= data.aws_ssm_parameter.github_oauth_token.value
-  TF_VERSION      		= var.TF_VERSION
-  bucket				= module.s3.codepipeline_bucket
+  source                = "../code-pipeline"
+  region                = var.region
+  type                  = var.type
+  name_prefix           = var.prefix
+  name_suffix           = var.suffix
+  env                   = var.env
+  owner                 = var.owner
+  repo_name             = var.repo_name
+  repo_default_branch   = var.repo_default_branch
+  github_oauth_token    = data.aws_ssm_parameter.github_oauth_token.value
+  TF_VERSION            = var.TF_VERSION
+  bucket                = module.s3.codepipeline_bucket
 }
 
 

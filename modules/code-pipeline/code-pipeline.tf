@@ -48,31 +48,31 @@ resource "aws_codebuild_project" "codebuild_project" {
     image                       = "aws/codebuild/amazonlinux2-x86_64-standard:2.0"
     type                        = "LINUX_CONTAINER"
     image_pull_credentials_type = "CODEBUILD"
-	# Needed when building docker images
-	privileged_mode 			= "true"
+    # Needed when building docker images
+    privileged_mode             = "true"
 
     environment_variable {
       name  = "TF_VERSION"
       value = var.TF_VERSION
-	  type  = "PLAINTEXT"
+      type  = "PLAINTEXT"
     }
 
     environment_variable {
       name  = "ENVIRONMENT"
       value = var.env
-	  type  = "PLAINTEXT"
+      type  = "PLAINTEXT"
     }
 
     environment_variable {
       name  = "REGION"
       value = var.region
-	  type  = "PLAINTEXT"
+      type  = "PLAINTEXT"
     }
 	
 	environment_variable {
       name  = "github_oauth_token"
       value = var.github_oauth_token
-	  type  = "PLAINTEXT"
+      type  = "PLAINTEXT"
     }
   }
 
